@@ -584,31 +584,39 @@ void scheduler(void)
     intr_off();
 
     int found = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
+    p = pick_highest_priority_runnable_proc();
+    // release(&prio_lock);
+    // release(&p->lock);
+    while (p != 0)
     {
-      acquire(&p->lock);
-      if (p->state == RUNNABLE)
-      {
-        
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->scheduler, &p->context);
+      p->state = RUNNING;
 
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+      // Switch to chosen process.  It is the process's job
+      // to release its lock and then reacquire it
+      // before jumping back to us.
+      p->state = RUNNING;
+      c->proc = p;
 
-        found = 1;
-      }
+      // insert process at the end of its priority list
+      // acquire(&prio_lock);
+      remove_from_prio_queue(p);
+      insert_into_prio_queue(p);
+      release(&prio_lock);
+
+      swtch(&c->scheduler, &p->context);
+      release(&p->lock);
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+      found += 1;
 
       // ensure that release() doesn't enable interrupts.
       // again to avoid a race between interrupt and WFI.
       c->intena = 0;
 
-      release(&p->lock);
+      // pick the highest priority once again
+      p = pick_highest_priority_runnable_proc();
     }
     if (found == 0)
     {
