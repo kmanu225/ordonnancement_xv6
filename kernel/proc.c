@@ -215,7 +215,7 @@ freeproc(struct proc *p)
   p->chan = 0;
   p->killed = 0;
   p->xstate = 0;
-  p->state = UNUSED;
+  p->state = UNUSED; 
 }
 
 // Create a page table for a given process,
@@ -363,10 +363,13 @@ int fork(void)
 
   np->state = RUNNABLE;
 
+
   // Acquire locks before adding the process to the priority queue
   acquire(&prio_lock);
+   np->priority = p->priority;
   // Add the process to the priority queue
   insert_into_prio_queue(np);
+ 
   // Release locks
   release(&prio_lock);
   release(&np->lock);
@@ -464,7 +467,7 @@ void exit(int status)
   acquire(&prio_lock);
   remove_from_prio_queue(p);
   release(&prio_lock);
-  
+
   release(&original_parent->lock);
 
   // Jump into the scheduler, never to return.
@@ -560,6 +563,7 @@ void scheduler(void)
       acquire(&p->lock);
       if (p->state == RUNNABLE)
       {
+        
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
@@ -665,7 +669,9 @@ void sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
-
+  // acquire(&prio_lock);
+  // remove_from_prio_queue(p);
+  // release(&prio_lock);
   sched();
 
   // Tidy up.
