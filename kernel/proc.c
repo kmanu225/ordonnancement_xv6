@@ -534,6 +534,12 @@ int wait(uint64 addr)
   }
 }
 
+
+int nice(int pid, int priority)
+{
+  return 0;
+}
+
 struct proc *pick_highest_priority_runnable_proc()
 {
   struct list_proc *list_of_proc;
