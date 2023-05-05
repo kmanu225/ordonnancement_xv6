@@ -215,7 +215,7 @@ freeproc(struct proc *p)
   p->chan = 0;
   p->killed = 0;
   p->xstate = 0;
-  p->state = UNUSED; 
+  p->state = UNUSED;
 }
 
 // Create a page table for a given process,
@@ -363,16 +363,16 @@ int fork(void)
 
   np->state = RUNNABLE;
 
-
   // Acquire locks before adding the process to the priority queue
   acquire(&prio_lock);
-   np->priority = p->priority;
+  np->priority = p->priority;
   // Add the process to the priority queue
   insert_into_prio_queue(np);
- 
+
   // Release locks
-  release(&prio_lock);
   release(&np->lock);
+  release(&prio_lock);
+  
 
   return pid;
 }
