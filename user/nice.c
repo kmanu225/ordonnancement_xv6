@@ -2,10 +2,11 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
-int
-main(int argc, char **argv)
+
+int main(int argc, char **argv)
 {
-  if(argc != 3){
+  if (argc != 3)
+  {
     fprintf(2, "usage: nice pid priority\n");
     exit(1);
   }
