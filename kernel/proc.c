@@ -591,8 +591,6 @@ void scheduler(void)
 
     int found = 0;
     p = pick_highest_priority_runnable_proc();
-    // release(&prio_lock);
-    // release(&p->lock);
     while (p != 0)
     {
       p->state = RUNNING;
@@ -604,7 +602,7 @@ void scheduler(void)
       c->proc = p;
 
       // insert process at the end of its priority list
-      // acquire(&prio_lock);
+
       remove_from_prio_queue(p);
       insert_into_prio_queue(p);
       release(&prio_lock);
