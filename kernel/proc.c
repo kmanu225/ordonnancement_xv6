@@ -372,7 +372,6 @@ int fork(void)
   // Release locks
   release(&np->lock);
   release(&prio_lock);
-  
 
   return pid;
 }
@@ -534,9 +533,28 @@ int wait(uint64 addr)
   }
 }
 
-
 int nice(int pid, int priority)
 {
+  struct list_proc *list_of_proc;
+  struct proc *p;
+  for (int i = 0; i < NPROC; i++)
+  {
+    acquire(&prio_lock);
+    list_of_proc = prio[i];
+
+    while (list_of_proc != 0)
+    {
+      p = list_of_proc->p;
+      acquire(&p->lock);
+      if (p->pid == pid)
+      {
+        p->priority = priority;
+      }
+      release(&p->lock);
+      list_of_proc = list_of_proc->next;
+    }
+    release(&prio_lock);
+  }
   return 0;
 }
 
@@ -544,7 +562,7 @@ struct proc *pick_highest_priority_runnable_proc()
 {
   struct list_proc *list_of_proc;
   struct proc *p;
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < NPROC; i++)
   {
     acquire(&prio_lock);
     list_of_proc = prio[i];
