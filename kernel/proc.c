@@ -268,6 +268,7 @@ void userinit(void)
 {
   struct proc *p;
 
+  acquire(&prio_lock);
   p = allocproc();
   initproc = p;
 
@@ -286,15 +287,14 @@ void userinit(void)
   p->state = RUNNABLE;
 
   // Acquire locks before adding the process to the priority queue
-  acquire(&prio_lock);
 
   // Add the process to the priority queue
   insert_into_prio_queue(p);
 
   // Release locks
 
-  release(&prio_lock);
   release(&p->lock);
+  release(&prio_lock);
 }
 
 // Grow or shrink user memory by n bytes.
@@ -324,6 +324,7 @@ int growproc(int n)
 // Sets up child kernel stack to return as if from fork() system call.
 int fork(void)
 {
+  acquire(&prio_lock);
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
@@ -363,8 +364,6 @@ int fork(void)
 
   np->state = RUNNABLE;
 
-  // Acquire locks before adding the process to the priority queue
-  acquire(&prio_lock);
   np->priority = p->priority;
   // Add the process to the priority queue
   insert_into_prio_queue(np);
@@ -451,7 +450,7 @@ void exit(int status)
   // we need the parent's lock in order to wake it up from wait().
   // the parent-then-child rule says we have to lock it first.
   acquire(&original_parent->lock);
-
+  acquire(&prio_lock);
   acquire(&p->lock);
 
   // Give any children to init.
@@ -463,7 +462,6 @@ void exit(int status)
   p->xstate = status;
   p->state = ZOMBIE;
 
-  acquire(&prio_lock);
   remove_from_prio_queue(p);
   release(&prio_lock);
 
@@ -535,25 +533,33 @@ int wait(uint64 addr)
 
 int nice(int pid, int priority)
 {
-  struct list_proc *list_of_proc;
-  struct proc *p;
-  for (int i = 0; i < NPROC; i++)
+  if (pid > 0)
   {
-    acquire(&prio_lock);
-    list_of_proc = prio[i];
-
-    while (list_of_proc != 0)
+    struct list_proc *list_of_proc;
+    struct proc *p;
+    for (int i = 0; i < 10; i++)
     {
-      p = list_of_proc->p;
-      acquire(&p->lock);
-      if (p->pid == pid)
+      acquire(&prio_lock);
+      list_of_proc = prio[i];
+
+      while (list_of_proc != 0)
       {
-        p->priority = priority;
+        p = list_of_proc->p;
+        acquire(&p->lock);
+        if (p->pid == pid)
+        {
+          remove_from_prio_queue(p);
+          p->priority = priority;
+          insert_into_prio_queue(p);
+          release(&p->lock);
+          release(&prio_lock);
+          return 1;
+        }
+        release(&p->lock);
+        list_of_proc = list_of_proc->next;
       }
-      release(&p->lock);
-      list_of_proc = list_of_proc->next;
+      release(&prio_lock);
     }
-    release(&prio_lock);
   }
   return 0;
 }
@@ -562,7 +568,7 @@ struct proc *pick_highest_priority_runnable_proc()
 {
   struct list_proc *list_of_proc;
   struct proc *p;
-  for (int i = 0; i < NPROC; i++)
+  for (int i = 0; i < 10; i++)
   {
     acquire(&prio_lock);
     list_of_proc = prio[i];
@@ -620,7 +626,6 @@ void scheduler(void)
       c->proc = p;
 
       // insert process at the end of its priority list
-
       remove_from_prio_queue(p);
       insert_into_prio_queue(p);
       release(&prio_lock);
@@ -725,9 +730,6 @@ void sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
-  // acquire(&prio_lock);
-  // remove_from_prio_queue(p);
-  // release(&prio_lock);
   sched();
 
   // Tidy up.
