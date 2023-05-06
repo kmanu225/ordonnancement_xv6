@@ -520,11 +520,27 @@ sys_pipe(void)
 uint64
 sys_create_mutex(void)
 {
-  // struct file *fd_mutex_file;
-  // fd_mutex_file->type = FD_MUTEX;
-  // initsleeplock(fd_mutex_file->mutex, "hello");
+  struct file *f;
+  struct sleeplock *lk;
+  int fd;
 
-  return -1;
+  // Allouer un struct file et un sleep lock et Allouer un file descriptor pour le struct file
+  if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0)
+  {
+    return -1;
+  }
+
+  lk = &f->mutex;
+  initlock(&lk->lk, "sleep lock");
+
+  // Initialiser les propriétés du struct file
+  f->type = FD_MUTEX;
+  f->readable = 1;
+  f->writable = 1;
+  f->ref = 1;
+
+  // Retourner le file descriptor alloué
+  return fd;
 }
 
 uint64
