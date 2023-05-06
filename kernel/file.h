@@ -11,7 +11,7 @@ struct file {
   uint off;          // FD_INODE and FD_DEVICE
   short major;       // FD_DEVICE
   short minor;       // FD_DEVICE
-  struct sleeplock mutex; // cette structure n'a de sens que lorsque le champ type sera égal à FD_MUTEX
+  struct sleeplock *mutex; // cette structure n'a de sens que lorsque le champ type sera égal à FD_MUTEX
 };
 
 #define major(dev)  ((dev) >> 16 & 0xFFFF)
