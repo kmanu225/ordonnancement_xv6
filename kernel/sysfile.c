@@ -523,6 +523,7 @@ sys_create_mutex(void)
   struct file *f;
   int fd;
 
+
   // Allouer un struct file et un file descriptor pour le struct file
   if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0)
   {
