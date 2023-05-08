@@ -1,0 +1,73 @@
+Questions du TP
+Question 1.1.
+- Il faut appeler insert_into_prio_queue lors de la création d'un processus. Ici il faut obligatoirement l'appeler dans la fonction userinit, et dans la fonction fork() lors de la création d'un nouveau processus. A noter que le processus fils a la même priorité que le processus père.
+
+- Il faut appeler remove_from_prio_queue sur des processus terminés(zombie).
+
+Question 3.4. Quelle(s) commande(s) avez-vous utilisée(s) ? Comment avez-vous procédé ?
+Pour modifier la priorité du processus qui exécute PRINT D j'ai utilisé : nice 10 8 avec 10 le PID de ce processus et 8 sa nouvelle priorité(la précédante était 5)
+Pour vérifier que la modification a bien eu lieu j'ai regardé la liste des processus et les files de priorité en tapant les commandes : ctrl+p puis ctrl+qu
+
+Question 3.5
+Que constatez-vous ? Est-ce conforme à ce que vous attendiez ?
+Constat: Le processus qui exécute le programmee "PRINT D", n'est plus visible dans le terminal.
+Explication : Cela est normal car la priorité du processus exécutant PRINT D étant devenu plus faible que les autres processus. En effet le processus de PRINT ne s'exécutera que lorsque les processus exécutant les programmes PRINT A, PRINT B et PRINT C se termineront.
+
+
+
+
+
+Question 4.1
+Je constate que le processus fils peut exécuter son programme à n'importe quel moment.
+
+Exemple : 
+Fils, tu m'attendras
+Fils, tu m'attendras
+$ mutest
+CPU 1: Blocked while acquiring priolock (0x0000000080015a38)
+process 12 (CPU 2) took it at pc=0x0000000080002432 
+I am myself at pc=0x00000000800026c6 in pid=-1 on CPU 1
+
+PID	PPID	PRIO	STATE	CMD
+1	-1	5	sleep 	'/init'
+2	1	5	sleep 	'/init'
+3	1	5	sleep 	'/init'
+4	1	5	sleep 	'/init'
+5	2	5	sleep 	'sh console1'
+12	5	5	run   	'mutest'
+CPU 0: Blocked while acquiring proc (0x00000000800167c8)
+process 12 (CPU 2) took it at pc=0x0000000080002192 
+I am myself at pc=0x0000000080002c04 in pid=-1C on CPU 0
+PU 1:
+PID	PPID	PRIO	STATE	CMD
+ Finally acquired1	 p-riolock (01x0000000080015a38) after 105009 tries
+	5	sleep 	'/init'
+2	1	5	sleep 	'/init'
+3	1	5	sleep 	'/init'
+4	1	5	sleep 	'/init'
+5	2	5	sleep 	'sh console1'
+12	5	5	run   	'mutest'
+13	12	5	run   	'mutest'
+CPU 0: Finally acquired proc (0x00000000800167c8) after 100001 tries
+Oui, père.
+Fils, tu m'attendras
+Fils, tu m'attendras
+Fils, tu m'attendras
+
+Normalement j'aurais dû voir 100 apparitions de "Fils, tu m'attendras" les unes à la suite des autres puis 1 "Oui, père."
+
+Question 4.1 
+Je constate que le Result n'est pas toujours égale à 100 alors cela aurait dû être le cas si les mutex fonctionnaient correctement.
+Exemple: 
+$ mutest2
+Result = 100
+$ mutest2
+Result = 100
+$ mutest2
+Result = 169
+$ 
+
+
+Question 4.6
+mutest et mutest2 donnent les résultats attendus.
+
