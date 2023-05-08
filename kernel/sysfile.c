@@ -521,17 +521,16 @@ uint64
 sys_create_mutex(void)
 {
   struct file *f;
-  struct sleeplock *lk;
   int fd;
 
-  // Allouer un struct file et un sleep lock et Allouer un file descriptor pour le struct file
+  // Allouer un struct file et un file descriptor pour le struct file
   if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0)
   {
     return -1;
   }
 
-  lk = &f->mutex;
-  initlock(&lk->lk, "sleep lock");
+  // Allouer un sleep lock
+  initsleeplock(&f->mutex, "sleep lock");
 
   // Initialiser les propriétés du struct file
   f->type = FD_MUTEX;
@@ -546,12 +545,36 @@ sys_create_mutex(void)
 uint64
 sys_acquire_mutex(void)
 {
+  struct file *f;
+
+  // Récupérer le struct file* associé au descripteur de fichier
+  if (argfd(0, 0, &f) < 0 || f->type != FD_MUTEX)
+  {
+    // Vérifier que le fichier est bien un mutex, sinon renvoyer -1
+    return -1;
+  }
+
+  // Appeler la fonction acquiresleep
+  acquiresleep(&f->mutex);
+
   return 0;
 }
 
 uint64
 sys_release_mutex(void)
 {
+  struct file *f;
 
-  return 0;
+  // Récupérer le struct file* associé au descripteur de fichier
+  if (argfd(0, 0, &f) < 0 || f->type != FD_MUTEX)
+  {
+    // Vérifier que le fichier est bien un mutex, sinon renvoyer -1
+    return -1;
+  }
+  // Appeler la fonction releasesleep
+  if (holdingsleep(&f->mutex) != 0)
+    {releasesleep(&f->mutex);
+    return 0;}
+
+  return -1;
 }
